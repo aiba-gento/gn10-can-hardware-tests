@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,13 +55,22 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+CAN_RxHeaderTypeDef RxHeader;
+CAN_FilterTypeDef RxFilter;
+CAN_TxHeaderTypeDef TxHeader;
+uint32_t TxMailbox;
+uint8_t RxData[8];
+bool RxFlag;
 /* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
   * @retval int
   */
+void initCAN(){}
+
+bool sendPacket(){}
+
 int main(void)
 {
 
@@ -89,7 +98,19 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
+  RxFilter.FilterIdHigh = 0;
+  RxFilter.FilterIdLow = 0;
+  RxFilter.FilterMaskIdHigh = 0;
+  RxFilter.FilterMaskIdLow = 0;
+  RxFilter.FilterScale = CAN_FILTERSCALE_32BIT;
+  RxFilter.FilterBank = 0;
+  RxFilter.FilterMode = CAN_FILTERMODE_IDMASK;
+  RxFilter.SlaveStartFilterBank = 14;
+  RxFilter.FilterActivation = ENABLE;
 
+  HAL_CAN_Start(&hcan);
+  HAL_CAN_ConfigFilter(&hcan,&RxFilter);
+  HAL_CAN_ActivateNotification(&hcan,CAN_IT_RX_FIFO0_MSG_PENDING);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -97,9 +118,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    HAL_GPIO_TogglePin(LED_A_GPIO_Port,LED_A_Pin);
+
     /* USER CODE BEGIN 3 */
-    HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -139,7 +159,14 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  if (HAL_CAN_GetRXMessage(hcan,CAN_RX_FIFO0,&RxHeader,RxData) == HAL_OK)
+  {
+    classifyData(RxHeader,StdId,RxData,RxHeader.DLC);
+  }
+  
+}
 /* USER CODE END 4 */
 
 /**
